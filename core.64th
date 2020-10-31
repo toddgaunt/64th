@@ -1,0 +1,23 @@
+\ Comments.
+
+\ Additional stack manipulation.
+: over ( a b -- a b a ) 1 pick ;
+: rot  ( a b c -- c b a ) 2 roll ;
+: -rot ( a b c -- b c a ) rot rot ;
+: nip  ( a b -- b ) swap drop ;
+: tuck ( a b -- ) swap over ;
+
+\ Static named values.
+: true  ( -- t ) -1 ;
+: false ( -- f ) 0 ;
+
+\ Additional Arithmetic.
+: >  ( a b -- t ) swap < ;
+: <> ( a b -- t ) = 0 = ;
+: 0= ( a b -- t ) 0 = ;
+: 0< ( a b -- t ) 0 < ;
+: 0> ( a b -- t ) 0 > ;
+: 2^ ( a -- c ) dup * ;
+: ^ ( a b -- c ) ( TODO ) ;
+
+: .n ( -- ) dup . ;
