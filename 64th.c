@@ -1,8 +1,8 @@
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 #include <string.h>
 
 #include "arg.h"
@@ -174,8 +174,9 @@ create_word(char const *symbol, cell addr, int inputs, int outputs)
 
 /* Stack functions */
 
+#if 0
 static cell
-pull(struct v64th *v)
+pop(struct v64th *v)
 {
 	/* This check should only trigger if there is a bug. */
 	if (v->sp == STACK_ADDR + STACK_SIZE) {
@@ -184,6 +185,7 @@ pull(struct v64th *v)
 	}
 	return v->memory[v->sp++];
 }
+#endif
 
 static void
 push(struct v64th *v, cell n)
@@ -217,7 +219,7 @@ underflow(struct v64th *v, unsigned int n)
 /* Return stack functions. */
 
 static cell
-rpull(struct v64th *v)
+rpop(struct v64th *v)
 {
 	/* This check should only trigger if there is a bug. */
 	if (v->rsp == RSTACK_ADDR + RSTACK_SIZE) {
@@ -277,7 +279,7 @@ exec(struct v64th *v, cell addr)
 			p = w;
 			break;
 		case DOSEM:
-			i = rpull(v);
+			i = rpop(v);
 			if (v->rsp == RSTACK_ADDR + RSTACK_SIZE)
 				goto end;
 			/* NEXT */
@@ -293,7 +295,7 @@ exec(struct v64th *v, cell addr)
 		case PRINT: // ( n -- )
 			if (underflow(v, 1))
 				return ERR_UNDERFLOW;
-			printf("%d\n", v->memory[v->sp]);
+			printf("%lld\n", v->memory[v->sp]);
 			v->sp++;
 			p++;
 			break;
@@ -354,11 +356,11 @@ exec(struct v64th *v, cell addr)
 			cell y = v->memory[v->sp+1];
 			cell z = v->memory[v->sp+0];
 			v->memory[v->sp+2] = y;
-			v->memory[v->sp+1] = z; 
+			v->memory[v->sp+1] = z;
 			v->memory[v->sp+0] = x;
 			p++;
 			break;
-		case PUSH: // ( x -- ) ( R: -- x )  
+		case PUSH: // ( x -- ) ( R: -- x )
 			//TODO
 			break;
 		case PULL: // ( -- x ) ( R: x -- )
@@ -476,7 +478,7 @@ run(struct v64th *v)
 	compile(v, STORE);
 	compile(v, NEXT);
 
-	cell drop_addr = v->memory[HERE];
+	//cell drop_addr = v->memory[HERE];
 	compile(v, DROP);
 	compile(v, NEXT);
 
@@ -674,7 +676,7 @@ run(struct v64th *v)
 	compile(v, store_addr);
 	compile(v, dosem_addr);
 
-	cell allot_addr = v->memory[HERE];
+	//cell allot_addr = v->memory[HERE];
 	create_word("allot", v->memory[HERE], 1, 0);
 	compile(v, DOCOL);
 	compile(v, dolit_addr);
@@ -704,8 +706,6 @@ run(struct v64th *v)
 		}
 		cell n = atoi(tib);
 
-		size_t inputs;
-		size_t outputs;
 		struct word *latest;
 		switch (v->memory[STATE]) {
 		case INTERACTIVE:
@@ -717,7 +717,7 @@ run(struct v64th *v)
 			if (n != 0 || 0 == strcmp(tib, "0")) {
 				push(v, n);
 				continue;
-			} 
+			}
 
 			struct word *entry = lookup_word(tib);
 			if (entry == NULL) {
