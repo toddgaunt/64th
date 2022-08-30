@@ -22,6 +22,7 @@
 #define DATA_ADDR (RSTACK_ADDR + RSTACK_SIZE)
 
 /* Error codes. */
+#define ERR_OK 0
 #define ERR_UNDERFLOW -1
 #define ERR_OVERFLOW -2
 #define ERR_FAULT -3
@@ -765,7 +766,7 @@ run(struct v64th *v)
 		}
 	}
 
-	return 0;
+	return ERR_OK;
 }
 
 int
@@ -812,8 +813,12 @@ main(int argc, char **argv)
 		v.memory[HERE] = DATA;
 
 		switch (run(&v)) {
+		case ERR_OK:
+			goto exit;
+			break;
 		case ERR_FAULT:
 			fprintf(stderr, "invalid data address\n");
+			break;
 		case ERR_UNDERFLOW:
 			fprintf(stderr, "stack underflow\n");
 			break;
@@ -822,6 +827,6 @@ main(int argc, char **argv)
 			break;
 		}
 	}
-
+exit:
 	exit(EXIT_SUCCESS);
 }
