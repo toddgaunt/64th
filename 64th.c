@@ -719,6 +719,14 @@ run(struct v64th *v)
 
 		switch (v->memory[STATE]) {
 		case INTERACTIVE:
+			// Interactive mode only command to list all available words
+			if (0 == strcmp(tib, "?")) {
+				for (struct word *w = dictionary; w != NULL; w = w->next) {
+					printf("%s\n", w->symbol);
+				}
+				continue;
+			}
+
 			if (0 == strcmp(tib, ":")) {
 				v->memory[STATE] = COLON;
 				continue;
