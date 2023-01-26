@@ -27,9 +27,8 @@
 #define ERR_OVERFLOW -2
 #define ERR_FAULT -3
 
-typedef unsigned char byte;
-typedef unsigned long long cell;
-typedef long long scell;
+typedef int8_t byte;
+typedef int64_t cell;
 
 /* Data space variable addresses */
 enum {
@@ -296,7 +295,7 @@ exec(struct v64th *v, cell addr)
 		case PRINT: // ( n -- )
 			if (underflow(v, 1))
 				return ERR_UNDERFLOW;
-			printf("%lld\n", v->memory[v->sp]);
+			printf("%ld\n", v->memory[v->sp]);
 			v->sp++;
 			p++;
 			break;
@@ -454,6 +453,13 @@ exec(struct v64th *v, cell addr)
 	}
 end:
 	return 0;
+}
+
+bool
+read_number(cell *n, char tib[])
+{
+	*n = strtol(tib, NULL, 0);
+	return n != 0 || 0 == strcmp(tib, "0");
 }
 
 int
@@ -690,8 +696,10 @@ run(struct v64th *v)
 	compile(v, dosem_addr);
 
 	bool newline = true;
-	v->memory[STATE] = INTERACTIVE;
 	char tib[WORD_SIZE + 1];
+	struct word *latest = NULL;
+
+	v->memory[STATE] = INTERACTIVE;
 	for (;;) {
 		/* Prompt the user if a newline has begun. */
 		if (newline) {
@@ -705,9 +713,10 @@ run(struct v64th *v)
 		if (strlen(tib) == 0) {
 			continue;
 		}
-		cell n = atoi(tib);
 
-		struct word *latest;
+		cell n = 0;
+		bool n_is_number = read_number(&n, tib);
+
 		switch (v->memory[STATE]) {
 		case INTERACTIVE:
 			if (0 == strcmp(tib, ":")) {
@@ -747,7 +756,7 @@ run(struct v64th *v)
 				break;
 			}
 
-			if (n != 0 || 0 == strcmp(tib, "0")) {
+			if (n_is_number) {
 				compile(v, dolit_addr);
 				compile(v, n);
 				latest->outputs += 1;
