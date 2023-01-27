@@ -96,7 +96,11 @@ struct v64th {
 	};
 };
 
+// dictionary points to the last word in the dictionary
 struct word *dictionary = NULL;
+
+// verbose should only be set at program startup.
+bool verbose = false;
 
 bool
 is_space(char ch)
@@ -259,7 +263,9 @@ exec(struct v64th *v, cell addr)
 
 	i = w = p = addr;
 	for (;;) {
-		//printf("%u, %u, %u\n", i, w, p);
+		if (verbose) {
+			printf("i=%ld, w=%ld, p=%ld\n", i, w, p);
+		}
 		// Addressing memory outside of the data segment is dangerous
 		if (fault(v, i) || fault(v, w) || fault(v, p))
 			return ERR_FAULT;
@@ -455,11 +461,10 @@ end:
 	return 0;
 }
 
-bool
-read_number(cell *n, char tib[])
+cell
+read_number(char tib[])
 {
-	*n = strtol(tib, NULL, 0);
-	return n != 0 || 0 == strcmp(tib, "0");
+	return strtol(tib, NULL, 0);
 }
 
 int
@@ -697,9 +702,10 @@ run(struct v64th *v)
 
 	bool newline = true;
 	char tib[WORD_SIZE + 1];
-	struct word *latest = NULL;
 
 	v->memory[STATE] = INTERACTIVE;
+	struct word *latest = NULL;
+
 	for (;;) {
 		/* Prompt the user if a newline has begun. */
 		if (newline) {
@@ -711,16 +717,18 @@ run(struct v64th *v)
 		}
 		/* Skip whitespace. */
 		if (strlen(tib) == 0) {
+			if (verbose) {
+				printf("<no input>\n");
+			}
 			continue;
 		}
 
-		cell n = 0;
-		bool n_is_number = read_number(&n, tib);
+		cell n = read_number(tib);
 
 		switch (v->memory[STATE]) {
 		case INTERACTIVE:
 			// Interactive mode only command to list all available words
-			if (0 == strcmp(tib, "?")) {
+			if (0 == strcmp(tib, "words")) {
 				for (struct word *w = dictionary; w != NULL; w = w->next) {
 					printf("%s\n", w->symbol);
 				}
@@ -749,8 +757,9 @@ run(struct v64th *v)
 			}
 
 			int err = exec(v, entry->addr);
-			if (err != 0)
+			if (err != 0) {
 				return err;
+			}
 			break;
 		case COLON:
 			latest = create_word(tib, v->memory[HERE], 0, 0);
@@ -764,7 +773,7 @@ run(struct v64th *v)
 				break;
 			}
 
-			if (n_is_number) {
+			if (n != 0 || 0 == strcmp(tib, "0")) {
 				compile(v, dolit_addr);
 				compile(v, n);
 				latest->outputs += 1;
@@ -797,8 +806,11 @@ main(int argc, char **argv)
 	argv++;
 	OPT_BEGIN(argv) {
 	case 'h':
-		printf(NAME" [-d <cells>]\n");
+		printf(NAME" [-v] [-d <n>]\n");
 		exit(0);
+		continue;
+	case 'v':
+		verbose = true;
 		continue;
 	case 'd':
 		data_size = atoi(OPT_ARG(argv));
@@ -819,13 +831,14 @@ main(int argc, char **argv)
 	cell *memory = calloc(1, sizeof(*memory) * size);
 
 	for (;;) {
-
 		struct v64th v = {
 			.sp = STACK_ADDR + STACK_SIZE,
 			.rsp = RSTACK_ADDR + STACK_SIZE,
 			.size = size,
 			.memory = memory,
 		};
+
+		dictionary = NULL;
 
 		v.memory[HERE] = DATA;
 
