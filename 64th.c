@@ -707,20 +707,42 @@ run(struct v64th *v)
 	struct word *latest = NULL;
 
 	for (;;) {
-		/* Prompt the user if a newline has begun. */
-		if (newline) {
-			prompt(v->memory[STATE]);
-		}
-		/* Read a single word, or terminate the loop if EOF. */
-		if (-1 == read_word(tib, sizeof(tib), &newline)) {
-			break;
-		}
-		/* Skip whitespace. */
-		if (strlen(tib) == 0) {
-			if (verbose) {
-				printf("<no input>\n");
+		int comment = 0;
+		for (;;) {
+			/* Prompt the user if a newline has begun. */
+			if (newline) {
+				prompt(v->memory[STATE]);
 			}
-			continue;
+
+			/* Read a single word, or terminate the loop if EOF. */
+			if (-1 == read_word(tib, sizeof(tib), &newline)) {
+				return ERR_OK;
+			}
+
+			/* Skip whitespace. */
+			if (strlen(tib) == 0) {
+				if (verbose) {
+					printf("<no input>\n");
+				}
+				continue;
+			}
+
+			/* Comment handling */
+			if ((comment > 0) && (0 == strcmp(tib, ")"))) {
+				comment--;
+				continue;
+			}
+
+			if (0 == strcmp(tib, "(")) {
+				comment++;
+				continue;
+			}
+
+			if (comment != 0) {
+				continue;
+			}
+
+			break;
 		}
 
 		cell n = read_number(tib);
