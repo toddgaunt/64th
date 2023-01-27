@@ -96,7 +96,7 @@ struct v64th {
 	};
 };
 
-// dictionary points to the last word in the dictionary
+// dictionary points to the last first in the dictionary.
 struct word *dictionary = NULL;
 
 // verbose should only be set at program startup.
@@ -130,12 +130,12 @@ prompt(int state)
 }
 
 int
-read_word(char *buf, size_t buf_size, bool *newline)
+read_word(FILE *in, char *buf, size_t buf_size, bool *newline)
 {
 	size_t i;
 	int ch;
 	for (i = 0; i < buf_size - 1; ++i) {
-		ch = getc(stdin);
+		ch = getc(in);
 		if (is_space(ch) || ch == EOF) {
 			break;
 		}
@@ -468,7 +468,7 @@ read_number(char tib[])
 }
 
 int
-run(struct v64th *v)
+run(struct v64th *v, FILE *in)
 {
 	/* Primitives. */
 	cell dosem_addr = v->memory[HERE];
@@ -715,7 +715,7 @@ run(struct v64th *v)
 			}
 
 			/* Read a single word, or terminate the loop if EOF. */
-			if (-1 == read_word(tib, sizeof(tib), &newline)) {
+			if (-1 == read_word(in, tib, sizeof(tib), &newline)) {
 				return ERR_OK;
 			}
 
@@ -864,7 +864,7 @@ main(int argc, char **argv)
 
 		v.memory[HERE] = DATA;
 
-		switch (run(&v)) {
+		switch (run(&v, stdin)) {
 		case ERR_OK:
 			goto exit;
 			break;
